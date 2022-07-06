@@ -9,13 +9,34 @@ from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from service_provider import *
+from service_connector import *
 
 app = fastapi.FastAPI()
 httpxClient = httpx.AsyncClient()
 store = redis.Redis()
 pb = pyrebase.initialize_app(json.load(open('firebase_config.json')))
 auth = pb.auth()
+
+
+# Todo: Create an "EnableServiceProvider" endpoint that first verifies login creds and get user's id.
+# Todo: It also gets as input API_KEY, API_SECRET, CLIENT_ID, CLIENT_SECRET, SCOPES.
+# Todo: It will generate a generic redirect_url like "authorization-success" for that service provider.
+# Todo: It will store these information as a field-value pair with key being user's id.
+# Todo: It will return success and redirect_url for that client.
+
+# Todo: Create an "AuthorizeServiceProvider" endpoint that first verifies login creds and get user's id.
+# Todo: It also gets as input the end_user_id in the above request.
+# Todo: Then this function generates a state and store it as a field in a field-value pair with key being "STATE".
+# Todo: The value for above state field would be concatenation of user_id and end_user_id.
+
+# Todo: Create an "authorization-success" endpoint. When the user approves the request, Service provider will hit this.
+# Todo: It will get the state and code information from the Service Provider.
+# Todo: It will generate the access and refresh tokens for that particular end-user.
+# Todo: It will save above details in a field:value pair with user_id_end_user_id key.
+
+# Todo: Create a "get_access_token" for each service provider. It first verifies login creds and get user's id.
+# Todo: It also gets as input end_user_id key.
+# Todo: It will use this info to get access_token and return it to the user.
 
 
 @app.post("/signup")
