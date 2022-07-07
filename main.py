@@ -2,14 +2,16 @@ import pyrebase
 import json
 import fastapi
 import uvicorn
+import httpx
+import redis
 
 from requests import HTTPError
 from fastapi import Depends
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-
-from service_connector import *
+from service_provider import *
+from service_connector import ServiceConnector
 
 app = fastapi.FastAPI()
 httpxClient = httpx.AsyncClient()
@@ -20,9 +22,9 @@ auth = pb.auth()
 
 # Todo: Create an "EnableServiceProvider" endpoint that first verifies login creds and get user's id.
 # Todo: It also gets as input API_KEY, API_SECRET, CLIENT_ID, CLIENT_SECRET, SCOPES.
-# Todo: It will generate a generic redirect_url like "authorization-success" for that service provider.
+# Todo: It will be documented to use a generic redirect_url "authorization-success" for that service provider.
 # Todo: It will store these information as a field-value pair with key being user's id.
-# Todo: It will return success and redirect_url for that client.
+# Todo: It will return success.
 
 # Todo: Create an "AuthorizeServiceProvider" endpoint that first verifies login creds and get user's id.
 # Todo: It also gets as input the end_user_id in the above request.
@@ -85,73 +87,112 @@ def validate_login_creds(form_data: OAuth2PasswordRequestForm = Depends()):
         return HTTPException(detail={'message': error_dict.get("message")}, status_code=error_dict.get("code"))
 
 
-@app.post('/authorize-twitter')
-async def authorize_twitter(user_id: str = Depends(validate_login_creds)):
+@app.post('/enable-provider')
+async def enable_provider(provider: str, api_key: str, api_secret: str, client_id: str, client_secret: str, scopes: str,
+                          user_id: str = Depends(validate_login_creds)):
+    connector = ServiceConnector(user_id=user_id, provider=provider, api_key=api_key, api_secret=api_secret,
+                                 client_id=client_id, client_secret=client_secret, scopes=scopes)
+    await connector.save_provider()
 
-    authorization_url = await TwitterServiceProvider.get_authorization_url(
+
+@app.post('/authorize-twitter')
+async def authorize_twitter(end_user_id: str, user_id: str = Depends(validate_login_creds)):
+    connector = ServiceConnector(user_id=user_id, provider=Twitter.name)
+    authorization_url = await connector.get_authorization_url(
         extras_params={'prompt': 'consent',
                        'code_challenge': 'challenge',
                        'code_challenge_method': 'plain'},
-        user_id=user_id)
+        user_id=user_id,
+        end_user_id=end_user_id)
     return authorization_url
 
 
 @app.post('/authorize-atlassian')
-async def authorize_atlassian(user_id: str = Depends(validate_login_creds)):
-    authorization_url = await AtlassianServiceProvider.get_authorization_url(
+async def authorize_atlassian(end_user_id: str, user_id: str = Depends(validate_login_creds)):
+    connector = ServiceConnector(user_id=user_id, provider=Atlassian.name)
+    authorization_url = await connector.get_authorization_url(
         extras_params={'prompt': 'consent',
                        'audience': 'api.atlassian.com'},
-        user_id=user_id)
+        user_id=user_id,
+        end_user_id=end_user_id)
     return RedirectResponse(authorization_url)
 
 
 @app.post('/authorize-google')
-async def authorize_google(user_id: str = Depends(validate_login_creds)):
-    authorization_url = await GoogleServiceProvider.get_authorization_url(
+async def authorize_google(end_user_id: str, user_id: str = Depends(validate_login_creds)):
+    connector = ServiceConnector(user_id=user_id, provider=Google.name)
+    authorization_url = await connector.get_authorization_url(
         extras_params={'prompt': 'consent',
                        'access_type': 'offline'},
-        user_id=user_id)
+        user_id=user_id,
+        end_user_id=end_user_id)
     return RedirectResponse(authorization_url)
 
 
 @app.post('/authorize-slack')
-async def authorize_slack(user_id: str = Depends(validate_login_creds)):
-    authorization_url = await SlackServiceProvider.get_authorization_url(
-        extras_params={'user_scope': SlackServiceProvider.USER_SCOPES},
-        user_id=user_id)
+async def authorize_slack(end_user_id: str, user_id: str = Depends(validate_login_creds)):
+    connector = ServiceConnector(user_id=user_id, provider=Slack.name)
+    authorization_url = await connector.get_authorization_url(
+        extras_params={'user_scope': connector.scopes},
+        user_id=user_id,
+        end_user_id=end_user_id)
     return RedirectResponse(authorization_url)
 
 
-@app.get(f'/{TwitterServiceProvider.REDIRECT_URI}')
+@app.get(f'/{Twitter.redirect_uri}')
 async def twitter_authorization_success(code: str, state: str):
-    user_id, oauth_token = await TwitterServiceProvider.fetch_user_oauth_token(code=code,
-                                                                               state=state, code_verifier='challenge')
-    TwitterServiceProvider.persist_oauth_token(oauth2_token=oauth_token, user_id=user_id)
+    if store.hexists("STATE", state):
+        key = store.hget("STATE", state)
+        user_id = key[0:key.find("::")]
+        store.hdel("STATE", state)
+    else:
+        raise ValueError("Incorrect STATE received.")
+    connector = ServiceConnector(user_id=user_id, provider=Twitter.name)
+    oauth_token = await connector.fetch_user_oauth_token(code=code, code_verifier='challenge')
+    connector.persist_oauth_token(oauth2_token=oauth_token, key=key)
     return RedirectResponse('/home')
 
 
-@app.get(f'/{GoogleServiceProvider.REDIRECT_URI}')
+@app.get(f'/{Google.redirect_uri}')
 async def google_authorization_success(code: str, state: str):
-    user_id, oauth_token = await GoogleServiceProvider.fetch_user_oauth_token(code=code,
-                                                                              state=state, code_verifier=None)
-    GoogleServiceProvider.persist_oauth_token(oauth2_token=oauth_token, user_id=user_id)
+    if store.hexists("STATE", state):
+        key = store.hget("STATE", state)
+        user_id = key[0:key.find("::")]
+        store.hdel("STATE", state)
+    else:
+        raise ValueError("Incorrect STATE received.")
+    connector = ServiceConnector(user_id=user_id, provider=Google.name)
+    oauth_token = await connector.fetch_user_oauth_token(code=code, code_verifier=None)
+    connector.persist_oauth_token(oauth2_token=oauth_token, key=key)
     return RedirectResponse('/home')
 
 
-@app.get(f'/{SlackServiceProvider.REDIRECT_URI}')
+@app.get(f'/{Slack.redirect_uri}')
 async def slack_authorization_success(code: str, state: str):
-    user_id, oauth_token = await SlackServiceProvider.fetch_user_oauth_token(code=code,
-                                                                             state=state, code_verifier=None)
-    SlackServiceProvider.persist_oauth_token(oauth2_token=oauth_token, user_id=user_id)
+    if store.hexists("STATE", state):
+        key = store.hget("STATE", state)
+        user_id = key[0:key.find("::")]
+        store.hdel("STATE", state)
+    else:
+        raise ValueError("Incorrect STATE received.")
+    connector = ServiceConnector(user_id=user_id, provider=Slack.name)
+    oauth_token = await connector.fetch_user_oauth_token(code=code, code_verifier=None)
+    connector.persist_oauth_token(oauth2_token=oauth_token, key=key)
     return RedirectResponse('/home')
 
 
-@app.get(f'/{AtlassianServiceProvider.REDIRECT_URI}')
+@app.get(f'/{Atlassian.redirect_uri}')
 async def atlassian_authorization_success(code: str, state: str):
-    user_id, oauth_token = await AtlassianServiceProvider.fetch_user_oauth_token(code=code,
-                                                                                 state=state, code_verifier=None)
-    AtlassianServiceProvider.persist_oauth_token(oauth2_token=oauth_token, user_id=user_id)
-    atlassian_access_token = AtlassianServiceProvider.get_access_token(user_id=user_id)
+    if store.hexists("STATE", state):
+        key = store.hget("STATE", state)
+        user_id = key[0:key.find("::")]
+        store.hdel("STATE", state)
+    else:
+        raise ValueError("Incorrect STATE received.")
+    connector = ServiceConnector(user_id=user_id, provider=Atlassian.name)
+    oauth_token = await connector.fetch_user_oauth_token(code=code, code_verifier=None)
+    connector.persist_oauth_token(oauth2_token=oauth_token, key=key)
+    atlassian_access_token = connector.get_access_token(key=key)
 
     response: httpx.Response = await httpxClient.get(url='https://api.atlassian.com/oauth/token/accessible-resources',
                                                      headers={'Authorization': f"Bearer {atlassian_access_token}",
@@ -159,10 +200,17 @@ async def atlassian_authorization_success(code: str, state: str):
     atlassian_cloud_id = response.json()[0]['id']
     atlassian_cloud_url = response.json()[0]['url']
 
-    store.hset(user_id, f"{AtlassianServiceProvider.NAME}_CLOUD_ID", str(atlassian_cloud_id))
-    store.hset(user_id, f"{AtlassianServiceProvider.NAME}_CLOUD_URL", str(atlassian_cloud_url))
+    store.hset(key, f"{connector.provider.name}_CLOUD_ID", str(atlassian_cloud_id))
+    store.hset(key, f"{connector.provider.NAME}_CLOUD_URL", str(atlassian_cloud_url))
 
     return RedirectResponse('/home')
+
+
+@app.get('/get-access-token')
+async def get_access_token(end_user_id: str, provider: str, user_id: str = Depends(validate_login_creds)):
+    key = f"{user_id}::{end_user_id}"
+    connector = ServiceConnector(user_id=user_id, provider=provider)
+    return await connector.get_access_token(key=key)
 
 if __name__ == '__main__':
     uvicorn.run(app='main:app', port=8000)
