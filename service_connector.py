@@ -66,7 +66,6 @@ class ServiceConnector:
         if scopes is not None:
             self.scopes = scopes
         else:
-            # Todo: check how to store and get scopes as list or string in Redis
             self.scopes = store.hget(user_id, f"{self.provider.name}_SCOPES")
         if api_secret is not None:
             self.api_secret = api_secret
@@ -84,7 +83,7 @@ class ServiceConnector:
             authorize_endpoint=self.provider.auth_url,
             access_token_endpoint=self.provider.token_url,
             refresh_token_endpoint=self.provider.refresh_url,
-            base_scopes=self.scopes)
+            base_scopes=self.scopes.split(' '))
 
     async def fetch_user_oauth_token(self, code: Optional[str], code_verifier: Optional[str]):
 

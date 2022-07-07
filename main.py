@@ -48,6 +48,7 @@ async def signup(form_data: OAuth2PasswordRequestForm = Depends()):
             email=form_data.username,
             password=form_data.password
         )
+        # Todo: verify if email sent.
         email_verification = auth.send_email_verification(id_token=user.get("idToken"))
         return JSONResponse(
             content={'message': f'Successfully created user. Please verify your email {user.get("email")}'},
