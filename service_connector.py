@@ -91,8 +91,6 @@ class ServiceConnector:
             auth = self.api_key + ":" + self.api_secret
             b64_bearer_token_creds = base64.b64encode(auth.encode('utf8'))
 
-            # Todo: Handle User-Agent header.
-            self.oauth.request_headers['User-Agent'] = "TheBotCreator"
             self.oauth.request_headers['Authorization'] = 'Basic ' + b64_bearer_token_creds.decode('utf8')
             self.oauth.request_headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8'
 
