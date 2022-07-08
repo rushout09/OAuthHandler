@@ -58,23 +58,23 @@ class ServiceConnector:
         if client_id is not None:
             self.client_id = client_id
         else:
-            self.client_id = store.hget(user_id, f"{self.provider.name}_CLIENT_ID")
+            self.client_id = store.hget(user_id, f"{self.provider.name}_CLIENT_ID").decode("utf-8")
         if client_secret is not None:
             self.client_secret = client_secret
         else:
-            self.client_secret = store.hget(user_id, f"{self.provider.name}_CLIENT_SECRET")
+            self.client_secret = store.hget(user_id, f"{self.provider.name}_CLIENT_SECRET").decode("utf-8")
         if scopes is not None:
             self.scopes = scopes
         else:
-            self.scopes = store.hget(user_id, f"{self.provider.name}_SCOPES")
+            self.scopes = store.hget(user_id, f"{self.provider.name}_SCOPES").decode("utf-8")
         if api_secret is not None:
             self.api_secret = api_secret
         elif self.provider.name == Twitter.name:
-            self.api_secret = store.hget(user_id, f"{self.provider.name}_API_SECRET")
+            self.api_secret = store.hget(user_id, f"{self.provider.name}_API_SECRET").decode("utf-8")
         if api_key is not None:
             self.api_key = api_key
         elif self.provider.name == Twitter.name:
-            self.api_key = store.hget(user_id, f"{self.provider.name}_API_KEY")
+            self.api_key = store.hget(user_id, f"{self.provider.name}_API_KEY").decode("utf-8")
 
         self.oauth: OAuth2 = OAuth2(
             name=self.provider.name,
