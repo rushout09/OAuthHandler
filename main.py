@@ -62,9 +62,10 @@ def validate_login_creds(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.post('/enable-provider')
 async def enable_provider(provider: str = Form(), api_key: str = Form(), api_secret: str = Form(),
-                          client_id: str = Form(), client_secret: str = Form(), scopes: str = Form(),
-                          user_id: str = Depends(validate_login_creds)):
+                          user_redirect_url: str = Form(), client_id: str = Form(), client_secret: str = Form(),
+                          scopes: str = Form(), user_id: str = Depends(validate_login_creds)):
     connector = ServiceConnector(user_id=user_id, provider=provider, api_key=api_key, api_secret=api_secret,
+                                 user_redirect_url=user_redirect_url,
                                  client_id=client_id, client_secret=client_secret, scopes=scopes)
     await connector.save_provider()
     # Todo: Return correct response.
@@ -90,7 +91,7 @@ async def authorize_atlassian(end_user: str = Form(), user_id: str = Depends(val
                        'audience': 'api.atlassian.com'},
         user_id=user_id,
         end_user_id=end_user)
-    return RedirectResponse(authorization_url)
+    return authorization_url
 
 
 @app.post('/authorize-google')
@@ -101,7 +102,7 @@ async def authorize_google(end_user: str = Form(), user_id: str = Depends(valida
                        'access_type': 'offline'},
         user_id=user_id,
         end_user_id=end_user)
-    return RedirectResponse(authorization_url)
+    return authorization_url
 
 
 @app.post('/authorize-slack')
@@ -111,7 +112,7 @@ async def authorize_slack(end_user: str = Form(), user_id: str = Depends(validat
         extras_params={'user_scope': connector.scopes},
         user_id=user_id,
         end_user_id=end_user)
-    return RedirectResponse(authorization_url)
+    return authorization_url
 
 
 @app.get(f'/{Twitter.redirect_uri}')
@@ -125,7 +126,8 @@ async def twitter_authorization_success(code: str, state: str):
     connector = ServiceConnector(user_id=user_id, provider=Twitter.name)
     oauth_token = await connector.fetch_user_oauth_token(code=code, code_verifier='challenge')
     connector.persist_oauth_token(oauth2_token=oauth_token, key=key)
-    return RedirectResponse('/home')
+    redirect_url = store.hget(user_id, f"{Twitter.name}_REDIRECT_URL").decode("utf-8")
+    return RedirectResponse(redirect_url)
 
 
 @app.get(f'/{Google.redirect_uri}')

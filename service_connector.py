@@ -30,6 +30,7 @@ class ServiceConnector:
                  provider: str,
                  api_secret: str = None,
                  api_key: str = None,
+                 user_redirect_url: str = None,
                  client_id: str = None,
                  client_secret: str = None,
                  scopes: str = None):
@@ -53,8 +54,13 @@ class ServiceConnector:
         self.scopes: Optional[str] = None
         self.api_secret: Optional[str] = None
         self.api_key: Optional[str] = None
+        self.user_redirect_url: Optional[str] = None
         self.redirect_url: str = f"{HOST_URL}/{self.provider.redirect_uri}"
 
+        if user_redirect_url is not None:
+            self.user_redirect_url = user_redirect_url
+        else:
+            self.user_redirect_url = store.hget(user_id, f"{self.provider.name}_REDIRECT_URL").decode("utf-8")
         if client_id is not None:
             self.client_id = client_id
         else:
@@ -144,6 +150,7 @@ class ServiceConnector:
         store.hset(self.user_id, f"{self.provider.name}_CLIENT_ID", self.client_id)
         store.hset(self.user_id, f"{self.provider.name}_CLIENT_SECRET", self.client_secret)
         store.hset(self.user_id, f"{self.provider.name}_SCOPES", self.scopes)
+        store.hset(self.user_id, f"{self.provider.name}_REDIRECT_URL", self.user_redirect_url)
 
     @staticmethod
     def generate_token(length=30, chars=UNICODE_ASCII_CHARACTER_SET):
