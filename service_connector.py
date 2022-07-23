@@ -111,7 +111,7 @@ class ServiceConnector:
             access_token = cipher.decrypt((store.hget(key, f"{self.provider.name}_ACCESS"))).decode("utf-8")
             expiry_time = int(store.hget(key, f"{self.provider.name}_EXPIRES_AT").decode("utf-8"))
             if expiry_time < int(round(datetime.now(tz=timezone.utc).timestamp())):
-                oauth2_token = await self.refresh_oauth_token()
+                oauth2_token = await self.refresh_oauth_token(key=key)
                 self.persist_oauth_token(oauth2_token=oauth2_token, key=key)
                 access_token = cipher.decrypt((store.hget(key, f"{self.provider.name}_ACCESS"))).decode("utf-8")
             return access_token
@@ -129,9 +129,9 @@ class ServiceConnector:
         store.hset(key, f"{self.provider.name}_EXPIRES_AT", str(expires_at))
         store.hset(key, f"{self.provider.name}_SCOPES", scopes)
 
-    async def refresh_oauth_token(self):
+    async def refresh_oauth_token(self, key: str):
         print(self.provider.name)
-        refresh_token = cipher.decrypt((store.hget(self.provider.name, 'REFRESH'))).decode("utf-8")
+        refresh_token = cipher.decrypt((store.hget(key, f"{self.provider.name}_REFRESH"))).decode("utf-8")
         print("refreshing access token")
         return await self.oauth.refresh_token(refresh_token=refresh_token)
 

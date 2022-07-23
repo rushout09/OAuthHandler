@@ -1,7 +1,6 @@
 import pyrebase
 import json
 import fastapi
-import uvicorn
 import httpx
 import redis
 
@@ -183,12 +182,9 @@ async def atlassian_authorization_success(code: str, state: str):
     return RedirectResponse('/home')
 
 
-@app.get('/access-token/{provider}/{end_user}')
-async def get_access_token(end_user: str, provider: str,
+@app.post('/get-access-token')
+async def get_access_token(end_user: str = Form(), provider: str = Form(),
                            user_id: str = Depends(validate_login_creds)):
     key = f"{user_id}::{end_user}"
     connector = ServiceConnector(user_id=user_id, provider=provider)
     return await connector.get_access_token(key=key)
-
-if __name__ == '__main__':
-    uvicorn.run(app='main:app', port=8000)
