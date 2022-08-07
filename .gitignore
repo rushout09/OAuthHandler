@@ -1,4 +1,4 @@
-.env
-firebase_config.json
+app/.env
+app/firebase_config.json
 venv
 .idea
