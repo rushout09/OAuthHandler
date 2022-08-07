@@ -10,8 +10,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.param_functions import Form
-from service_provider import *
-from service_connector import ServiceConnector
+from app.service_provider import *
+from app.service_connector import ServiceConnector
 
 app = fastapi.FastAPI()
 httpxClient = httpx.AsyncClient()

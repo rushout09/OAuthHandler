@@ -10,7 +10,7 @@ from httpx_oauth.oauth2 import OAuth2
 from oauthlib.common import UNICODE_ASCII_CHARACTER_SET
 from random import SystemRandom
 from cryptography.fernet import Fernet
-from service_provider import *
+from app.service_provider import *
 
 load_dotenv()
 store = redis.Redis()
