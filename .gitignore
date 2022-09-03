@@ -2,3 +2,5 @@ app/.env
 app/firebase_config.json
 venv
 .idea
+.env
+firebase_config.json
