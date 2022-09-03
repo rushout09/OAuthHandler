@@ -9,3 +9,10 @@ you need a module that is:
 
 The OAuthHandler project implements above OAuth module as a microservice.
 
+
+## Contribution:
+
+This project needs a lot of help from Open Source community.
+We need help in writing documentation, testcases, and integrations for upcoming platforms.
+This project is a good starting point for people getting started with open source programming.
+Please feel free to ask questions and contribute in any way possible.  
