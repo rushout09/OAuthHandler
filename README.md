@@ -1,19 +1,11 @@
-Create an "EnableServiceProvider" endpoint that first verifies login creds and get user's id.
-It also gets as input API_KEY, API_SECRET, CLIENT_ID, CLIENT_SECRET, SCOPES.
-It will be documented to use a generic redirect_url "authorization-success" for that service provider.
-It will store this information as a field-value pair with key being user's id.
-It will return success.
+# OAuthHandler Project
 
-Create an "AuthorizeServiceProvider" endpoint that first verifies login creds and get user's id.
-It also gets as input the end_user_id in the above request.
-Then this function generates a state and store it as a field in a field-value pair with key being "STATE".
-The value for above state field would be concatenation of user_id and end_user_id.
+If you are building a production-grade application that interacts with other Platform's API (Ex: Twitter, Google, Shopify, Notion, etc)
+you need a module that is:
 
-Create an "authorization-success" endpoint. When the user approves the request, Service provider will hit this.
-It will get the state and code information from the Service Provider.
-It will generate the access and refresh tokens for that particular end-user.
-It will save above details in a field:value pair with user_id_end_user_id key.
+1. Complex: Handles intricate OAuth2 flow to get end-user's permission to perform action on their behalf.
+2. Fast and Secure: Safely stores and quickly retrieves Access tokens and Refresh tokens for end-users.
+3. Scalable: Can be accessed by multiple instances across multiple regions. 
 
-Create a "get_access_token" for each service provider. It first verifies login creds and get user's id.
-It also gets as input end_user_id key.
-It will use this info to get access_token and return it to the user.
+The OAuthHandler project implements above OAuth module as a microservice.
+
