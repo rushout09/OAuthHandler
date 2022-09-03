@@ -1,15 +1,16 @@
 # OAuthHandler
 
 If you are building an application that interacts with other Platform's APIs 
-(Eg: Twitter, Google, Shopify, Notion, etc.) you need an Authentication microservice that is:
+(Eg: Slack, Twitter, Google, Shopify, Notion, etc.) you need an OAuth flow that is:
 
 1. Simple: To handle complex OAuth2 flow to get end users' permission to perform any action on their behalf.
 2. Fast and Secure: To store and retrieve Access tokens and Refresh tokens for end-users.
 3. Scalable: To be accessed by instances across multiple regions.
 
-This project implements above OAuth authentication as a microservice.
-
+Slack says that implementing such OAuth flow is discouragingly hard. Not anymore!
 ![Slack says that implementing an OAuth flow is discouragingly hard. Not anymore!](slack_screenshot.png)
+
+This project implements above OAuth authentication as a microservice.
 
 ## How it works
 
