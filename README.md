@@ -54,13 +54,30 @@ It also gets as input end_user_id key.
 It will use this info to get access_token and return it to the user.
 
 ## Deploying:
+  
+  ### WIP: Without Docker
 
-1. checkout code: Git clone on your server/locally
-2. Install a virtual env.
-3. python pip install -r requirements.txt
-4. Install redis on your machine. https://realpython.com/python-redis/
-5. cd inside the app folder.
-6. uvicorn app.main:app --reload --port 8000
+  1. checkout code: Git clone on your server/locally
+  2. Install a virtual env.
+  3. python pip install -r requirements.txt
+  4. Install redis on your machine. https://realpython.com/python-redis/
+  5. Create a .env file in the project root folder (Inside OAuthHandler).
+  6. Copy the firebase_config file in the project root folder (Inside OAuthHandler).
+  7. Verify your project structure looks like this: 
+  ![Project Structure](project_structure.png)
+  8. uvicorn app.main:app --reload --port 8000
+
+
+  ### WIP: With Docker
+
+  1. checkout code: Git clone on your server/locally
+  2. Create a .env file in the project root folder (Inside OAuthHandler).
+  3. Copy the firebase_config file in the project root folder (Inside OAuthHandler).
+  4. Install redis on your machine. https://realpython.com/python-redis/ with relevant config
+  5. Install Docker.
+  6. Verify your project structure looks like this: 
+  ![Project Structure](project_structure.png)
+  7. Run Docker start - add other relevant steps.
 
 ## Contribution
 
