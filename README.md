@@ -55,6 +55,12 @@ It will use this info to get access_token and return it to the user.
 
 ## Deploying:
 
+1. checkout code: Git clone on your server/locally
+2. Install a virtual env.
+3. python pip install -r requirements.txt
+4. Install redis on your machine. https://realpython.com/python-redis/
+5. cd inside the app folder.
+6. uvicorn app.main:app --reload --port 8000
 
 ## Contribution
 
